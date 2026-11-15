@@ -1,0 +1,18 @@
+[phases.setup]
+nixPkgs = [
+  "php83",
+  "php83Extensions.bcmath",
+  "php83Extensions.intl",
+  "php83Extensions.pdo_pgsql",
+  "php83Extensions.zip",
+  "php83Extensions.gd",
+  "php83Extensions.opcache",
+  "php83Extensions.exif",
+  "composer"
+]
+
+[phases.build]
+cmds = ["composer install --no-dev --optimize-autoloader --no-interaction --no-progress"]
+
+[start]
+cmd = "php artisan migrate --force && php artisan db:seed --class=DatosElectoralesSeeder --force && php artisan serve --host=0.0.0.0 --port=$PORT"
