@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd intl zip \
     && docker-php-ext-enable intl zip \
     && a2enmod rewrite \
+    && a2dismod mpm_event \
+    && a2enmod mpm_prefork \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Configurar Apache para escuchar en el puerto 8080 (Railway)
