@@ -3,27 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Observatorio Wild 2026 - Sondeo Informativo</title>
-
-    <!-- PWA -->
+    <title>Observatorio Wild 2026</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#f59e0b">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Wild 2026">
-    <link rel="apple-touch-icon" href="/icon.svg">
-    <link rel="icon" type="image/svg+xml" href="/icon.svg">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         #portada { transition: transform .8s ease, opacity .8s ease; }
         .fade-out { transform: translateY(-100%); opacity: 0; pointer-events: none; }
+        .hidden-portada { display: none !important; }
     </style>
 </head>
 <body class="bg-gray-50">
 
-    <!-- ===== PORTADA ===== -->
     <div id="portada" class="fixed inset-0 z-50 flex items-center justify-center"
          style="background: linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#312e81 100%);">
         <div class="text-center px-6">
@@ -31,32 +26,25 @@
             <h1 class="text-4xl md:text-6xl font-extrabold text-white mb-4">🗳️ Observatorio Wild</h1>
             <p class="text-slate-300 text-lg max-w-xl mx-auto mb-10">
                 Sondeo informativo sobre las entrevistas a los candidatos a las Elecciones Generales 2026.
-                Vídeo, propuestas comparadas y estimación de voto.
             </p>
             <button onclick="entrar()"
                 class="px-10 py-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold text-xl rounded-full shadow-2xl transition transform hover:scale-105">
                 ▶ ENTRAR
             </button>
-            <p class="text-slate-500 text-xs mt-8">Medio de estudio informativo · Sin fines electorales oficiales</p>
         </div>
     </div>
 
-    <!-- ===== BOTÓN DE SILENCIO ===== -->
-    <button id="btnMute" onclick="toggleMute()" class="fixed bottom-4 right-4 z-40 bg-slate-800 text-white w-12 h-12 rounded-full shadow-lg hidden">
-        🔊
-    </button>
+    <div id="bannerSonido" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-40 bg-amber-500 text-slate-900 px-6 py-3 rounded-full shadow-lg font-bold cursor-pointer hover:bg-amber-400 transition">
+        🔊 Haz clic para activar el sonido
+    </div>
 
-    <!-- ===== APLICACIÓN ===== -->
+    <button id="btnMute" onclick="toggleMute()" class="fixed bottom-4 right-4 z-40 bg-slate-800 text-white w-12 h-12 rounded-full shadow-lg hidden">🔊</button>
+
     <div class="max-w-4xl mx-auto p-6">
         <h1 class="text-3xl font-bold text-center mb-2">🗳️ Sondeo Informativo: Elecciones 2026</h1>
-        <p class="text-center text-gray-600 mb-8">Entrevistas de Jordi Wild - The Wild Project</p>
+        <p class="text-center text-gray-600 mb-4">Entrevistas de Jordi Wild</p>
 
-        @if(session('success'))
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{{ session('success') }}</div>
-        @endif
-        @if(session('error'))
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{{ session('error') }}</div>
-        @endif
+        <div id="mensaje" class="hidden mb-4 px-4 py-3 rounded shadow"></div>
 
         <div class="grid gap-6 mb-10">
             @foreach($candidatos as $c)
@@ -66,13 +54,9 @@
                             <h2 class="text-2xl font-bold">{{ $c->nombre }} <span class="text-sm font-normal text-gray-500">({{ $c->partido }})</span></h2>
                             <p class="text-gray-600 mt-2">{{ $c->resumen }}</p>
                         </div>
-                        <form action="{{ route('votar') }}" method="POST" class="flex flex-col items-end gap-2 ml-4">
-                            @csrf
-                            <input type="hidden" name="candidato_id" value="{{ $c->id }}">
-                            <button type="submit" class="px-6 py-3 text-white font-bold rounded hover:opacity-90 transition shadow-lg" style="background-color: {{ $c->color_hex }}">
-                                🗳️ Votar
-                            </button>
-                        </form>
+                        <button type="button" onclick="votar({{ $c->id }})" class="px-6 py-3 text-white font-bold rounded hover:opacity-90 transition shadow-lg ml-4" style="background-color: {{ $c->color_hex }}">
+                            🗳️ Votar
+                        </button>
                     </div>
 
                     @if($c->propuestas->count() > 0)
@@ -82,7 +66,7 @@
                                 @foreach($c->propuestas as $p)
                                     <div class="bg-white p-3 rounded border-l-2" style="border-color: {{ $c->color_hex }}">
                                         <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mr-2">{{ $p->tema }}</span>
-                                        <strong class="text-gray-800">{{ $p->titulo }}:</strong>
+                                        <strong>{{ $p->titulo }}:</strong>
                                         <span class="text-gray-600 text-sm">{{ $p->descripcion }}</span>
                                     </div>
                                 @endforeach
@@ -92,14 +76,11 @@
 
                     @if($c->entrevista)
                         <div class="mt-4">
-                            <h3 class="font-semibold text-gray-700 mb-2">🎥 Entrevista completa:</h3>
+                            <h3 class="font-semibold text-gray-700 mb-2">🎥 Entrevista:</h3>
                             <div class="aspect-video w-full max-w-2xl">
                                 <iframe class="w-full h-full rounded shadow"
                                     src="https://www.youtube.com/embed/{{ str_replace('https://www.youtube.com/watch?v=', '', $c->entrevista->youtube_url) }}"
-                                    frameborder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowfullscreen>
-                                </iframe>
+                                    frameborder="0" allowfullscreen></iframe>
                             </div>
                         </div>
                     @endif
@@ -108,20 +89,15 @@
         </div>
 
         <div class="bg-white p-6 rounded-lg shadow mb-10">
-            <h2 class="text-2xl font-bold mb-4 text-center">📊 Resultados del Sondeo en Tiempo Real</h2>
+            <h2 class="text-2xl font-bold mb-4 text-center">📊 Resultados en Tiempo Real</h2>
             <div class="max-w-3xl mx-auto"><canvas id="resultsChart"></canvas></div>
-        </div>
-
-        <div class="text-center text-gray-500 text-sm pb-8">
-            <p>Aplicación de estudio informativo · No tiene fines electorales oficiales</p>
-            <p class="mt-2">Datos basados en entrevistas de Jordi Wild (Noviembre 2026)</p>
+            <p class="text-center text-xs text-gray-400 mt-2">🔄 Actualización automática cada 5 segundos</p>
         </div>
     </div>
 
-    <!-- ===== GRÁFICO ===== -->
     <script>
         const ctx = document.getElementById('resultsChart').getContext('2d');
-        new Chart(ctx, {
+        let chart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: {!! json_encode($resultados->pluck('nombre')) !!},
@@ -134,23 +110,28 @@
             },
             options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } }
         });
-    </script>
 
-    <!-- ===== PORTADA + MÚSICA + PWA ===== -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js');
-        }
+        // Polling: actualizar gráfico cada 5 segundos
+        setInterval(function() {
+            fetch('/resultados')
+                .then(r => r.json())
+                .then(d => {
+                    chart.data.labels = d.labels;
+                    chart.data.datasets[0].data = d.data;
+                    chart.data.datasets[0].backgroundColor = d.colors;
+                    chart.update();
+                });
+        }, 5000);
 
         let audioCtx, masterGain, playing = false;
 
         function iniciarMusica() {
+            if (audioCtx) return;
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             masterGain = audioCtx.createGain();
             masterGain.gain.value = 0.06;
             masterGain.connect(audioCtx.destination);
-
-            const acordes = [ [220,277.18,329.63], [196,246.94,293.66], [174.61,220,261.63], [164.81,207.65,246.94] ];
+            const acordes = [[220,277.18,329.63], [196,246.94,293.66], [174.61,220,261.63], [164.81,207.65,246.94]];
             let i = 0;
             function tocarAcorde() {
                 if (!playing) return;
@@ -173,10 +154,24 @@
         }
 
         function entrar() {
+            sessionStorage.setItem('ya_entro', 'true');
             document.getElementById('portada').classList.add('fade-out');
             document.getElementById('btnMute').classList.remove('hidden');
             playing = true;
             iniciarMusica();
+        }
+
+        function activarSonido() {
+            document.getElementById('bannerSonido').classList.add('hidden');
+            document.getElementById('btnMute').classList.remove('hidden');
+            playing = true;
+            iniciarMusica();
+        }
+
+        if (sessionStorage.getItem('ya_entro') === 'true') {
+            document.getElementById('portada').classList.add('hidden-portada');
+            document.getElementById('bannerSonido').classList.remove('hidden');
+            document.getElementById('bannerSonido').onclick = activarSonido;
         }
 
         function toggleMute() {
@@ -184,6 +179,33 @@
             playing = !playing;
             masterGain.gain.setTargetAtTime(playing ? 0.06 : 0, audioCtx.currentTime, 0.2);
             document.getElementById('btnMute').textContent = playing ? '🔊' : '🔇';
+        }
+
+        function votar(candidatoId) {
+            const msgDiv = document.getElementById('mensaje');
+            msgDiv.classList.add('hidden');
+
+            fetch('/votar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ candidato_id: candidatoId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                msgDiv.classList.remove('hidden');
+                msgDiv.textContent = data.message;
+                msgDiv.className = 'mb-4 px-4 py-3 rounded shadow ' +
+                    (data.success ? 'bg-green-100 border-l-4 border-green-500 text-green-700' : 'bg-red-100 border-l-4 border-red-500 text-red-700');
+            })
+            .catch(err => {
+                msgDiv.classList.remove('hidden');
+                msgDiv.textContent = '❌ Error de conexión';
+                msgDiv.className = 'mb-4 px-4 py-3 rounded shadow bg-red-100 border-l-4 border-red-500 text-red-700';
+            });
         }
     </script>
 </body>
