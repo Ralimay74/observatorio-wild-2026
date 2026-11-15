@@ -15,6 +15,7 @@
         #portada { transition: transform .8s ease, opacity .8s ease; }
         .fade-out { transform: translateY(-100%); opacity: 0; pointer-events: none; }
         .hidden-portada { display: none !important; }
+        .btn-votado { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -46,6 +47,10 @@
 
         <div id="mensaje" class="hidden mb-4 px-4 py-3 rounded shadow"></div>
 
+        <div id="avisoVotado" class="hidden mb-4 bg-amber-100 border-l-4 border-amber-500 text-amber-800 px-4 py-3 rounded shadow">
+            ⚠️ Ya has emitido tu voto. Solo se permite un voto por dispositivo.
+        </div>
+
         <div class="grid gap-6 mb-10">
             @foreach($candidatos as $c)
                 <div class="bg-white p-6 rounded-lg shadow border-l-4" style="border-color: {{ $c->color_hex }}">
@@ -54,7 +59,7 @@
                             <h2 class="text-2xl font-bold">{{ $c->nombre }} <span class="text-sm font-normal text-gray-500">({{ $c->partido }})</span></h2>
                             <p class="text-gray-600 mt-2">{{ $c->resumen }}</p>
                         </div>
-                        <button type="button" onclick="votar({{ $c->id }})" class="px-6 py-3 text-white font-bold rounded hover:opacity-90 transition shadow-lg ml-4" style="background-color: {{ $c->color_hex }}">
+                        <button type="button" id="btn-votar-{{ $c->id }}" onclick="votar({{ $c->id }})" class="btn-votar px-6 py-3 text-white font-bold rounded hover:opacity-90 transition shadow-lg ml-4" style="background-color: {{ $c->color_hex }}">
                             🗳️ Votar
                         </button>
                     </div>
@@ -159,6 +164,7 @@
             document.getElementById('btnMute').classList.remove('hidden');
             playing = true;
             iniciarMusica();
+            comprobarSiYaVoto();
         }
 
         function activarSonido() {
@@ -166,12 +172,14 @@
             document.getElementById('btnMute').classList.remove('hidden');
             playing = true;
             iniciarMusica();
+            comprobarSiYaVoto();
         }
 
         if (sessionStorage.getItem('ya_entro') === 'true') {
             document.getElementById('portada').classList.add('hidden-portada');
             document.getElementById('bannerSonido').classList.remove('hidden');
             document.getElementById('bannerSonido').onclick = activarSonido;
+            comprobarSiYaVoto();
         }
 
         function toggleMute() {
@@ -181,7 +189,29 @@
             document.getElementById('btnMute').textContent = playing ? '🔊' : '🔇';
         }
 
+        // Comprobar si ya votó en este dispositivo (localStorage)
+        function comprobarSiYaVoto() {
+            if (localStorage.getItem('ya_vote') === 'true') {
+                bloquearBotones();
+            }
+        }
+
+        function bloquearBotones() {
+            document.querySelectorAll('.btn-votar').forEach(btn => {
+                btn.classList.add('btn-votado');
+                btn.textContent = '✅ Votado';
+                btn.disabled = true;
+            });
+            document.getElementById('avisoVotado').classList.remove('hidden');
+        }
+
         function votar(candidatoId) {
+            // Bloqueo local inmediato
+            if (localStorage.getItem('ya_vote') === 'true') {
+                mostrarMensaje('⚠️ Ya has emitido tu voto desde este dispositivo.', false);
+                return;
+            }
+
             const msgDiv = document.getElementById('mensaje');
             msgDiv.classList.add('hidden');
 
@@ -196,16 +226,25 @@
             })
             .then(res => res.json())
             .then(data => {
-                msgDiv.classList.remove('hidden');
-                msgDiv.textContent = data.message;
-                msgDiv.className = 'mb-4 px-4 py-3 rounded shadow ' +
-                    (data.success ? 'bg-green-100 border-l-4 border-green-500 text-green-700' : 'bg-red-100 border-l-4 border-red-500 text-red-700');
+                if (data.success) {
+                    // Marcar como votado en localStorage (persistente)
+                    localStorage.setItem('ya_vote', 'true');
+                    localStorage.setItem('voto_candidato', candidatoId);
+                    bloquearBotones();
+                }
+                mostrarMensaje(data.message, data.success);
             })
             .catch(err => {
-                msgDiv.classList.remove('hidden');
-                msgDiv.textContent = '❌ Error de conexión';
-                msgDiv.className = 'mb-4 px-4 py-3 rounded shadow bg-red-100 border-l-4 border-red-500 text-red-700';
+                mostrarMensaje('❌ Error de conexión', false);
             });
+        }
+
+        function mostrarMensaje(texto, esExito) {
+            const msgDiv = document.getElementById('mensaje');
+            msgDiv.classList.remove('hidden');
+            msgDiv.textContent = texto;
+            msgDiv.className = 'mb-4 px-4 py-3 rounded shadow ' +
+                (esExito ? 'bg-green-100 border-l-4 border-green-500 text-green-700' : 'bg-red-100 border-l-4 border-red-500 text-red-700');
         }
     </script>
 </body>
