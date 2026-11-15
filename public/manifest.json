@@ -1,0 +1,18 @@
+{
+    "name": "Observatorio Wild 2026",
+    "short_name": "Wild 2026",
+    "description": "Sondeo informativo sobre las entrevistas de Jordi Wild a los candidatos a las Elecciones Generales 2026",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#f59e0b",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}

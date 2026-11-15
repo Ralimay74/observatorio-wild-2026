@@ -1,0 +1,21 @@
+/* Hacer los checkboxes más visibles */
+.fi-ta-record-checkbox,
+input[type="checkbox"] {
+    accent-color: #ea580c !important;
+    width: 18px !important;
+    height: 18px !important;
+    cursor: pointer;
+    opacity: 1 !important;
+}
+
+/* Borde más marcado para los checkboxes no marcados */
+.fi-ta-record-checkbox:not(:checked) {
+    border: 2px solid #6b7280 !important;
+    background-color: white !important;
+}
+
+/* Checkbox marcado */
+.fi-ta-record-checkbox:checked {
+    background-color: #ea580c !important;
+    border-color: #ea580c !important;
+}
