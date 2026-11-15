@@ -18,18 +18,25 @@ class VotacionController extends Controller
 
     public function votar(Request $request)
     {
-        $request->validate(['candidato_id' => 'required|exists:candidatos,id']);
-        $ip = $request->ip();
+        try {
+            $request->validate([
+                'candidato_id' => 'required|exists:candidatos,id'
+            ]);
 
-        if (Voto::where('ip_address', $ip)->exists()) {
-            return back()->with('error', '⚠️ Ya has emitido tu voto desde esta conexión.');
+            $ip = $request->ip();
+
+            if (Voto::where('ip_address', $ip)->exists()) {
+                return redirect('/')->with('error', '⚠️ Ya has emitido tu voto desde esta conexión.');
+            }
+
+            Voto::create([
+                'candidato_id' => $request->candidato_id,
+                'ip_address' => $ip,
+            ]);
+
+            return redirect('/')->with('success', '✅ ¡Voto registrado correctamente!');
+        } catch (\Exception $e) {
+            return redirect('/')->with('error', '❌ Error: ' . $e->getMessage());
         }
-
-        Voto::create([
-            'candidato_id' => $request->candidato_id,
-            'ip_address' => $ip,
-        ]);
-
-        return back()->with('success', '✅ ¡Voto registrado correctamente!');
     }
 }
